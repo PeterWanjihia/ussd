@@ -26,7 +26,7 @@ const Greetings = () => {
   if (hourNow >= 12 && hourNow < 18) return "Good afternoon";
 };
 
-app.post("/ussd", (req, res) => {
+app.post("/", (req, res) => {
   const { phoneNumber, text } = req.body;
 
   let response = "";
