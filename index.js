@@ -30,7 +30,7 @@ app.get("/", (req, res) => {
   res.send("Our USSD server");
 });
 
-app.post("/ussd", (req, res) => {
+app.post("/", (req, res) => {
   const { phoneNumber, text } = req.body;
 
   let response = "";
