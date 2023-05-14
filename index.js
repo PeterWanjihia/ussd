@@ -12,14 +12,7 @@ const {
 const { sendMessage } = require("./middlewares/sms");
 
 const app = express();
-app.use(
-  cors({
-    origin: [
-      "https://developers.africastalking.com/simulator",
-      "http://localhost:5173/",
-    ],
-  })
-);
+app.use(cors({ origin: "*" }));
 app.use(express.urlencoded({ extended: false }));
 
 let orderData = {};
