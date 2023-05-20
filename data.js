@@ -52,7 +52,7 @@ const EMR_patients = [
 const patients = [
   {
     ccc_no: "12345678",
-    full_name: "John Doe",
+    full_name: "John Stones",
     facility: "Coast Provincial General Hospital CCC (Mombasa)",
     phone: "+254114952302",
     username: "johndoe",
@@ -62,7 +62,7 @@ const patients = [
     ccc_no: "ABC1234",
     full_name: "Chris Parker",
     facility: "Nyanza Provincial General Hospital CCC (Kisumu)",
-    phone: "+254738960475",
+    phone: "+254114357926",
     username: "amchris",
     password: "123456",
   },

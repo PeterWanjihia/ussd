@@ -1,7 +1,9 @@
 require("dotenv").config();
 const express = require("express");
 const dayjs = require("dayjs");
+const bcrypt = require("bcryptjs");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const {
   patients,
   orders,
@@ -12,6 +14,7 @@ const {
 const { sendMessage } = require("./middlewares/sms");
 
 const app = express();
+app.use(express.json());
 app.use(cors({ origin: "*" }));
 app.use(express.urlencoded({ extended: false }));
 
@@ -24,13 +27,11 @@ const Greetings = () => {
 
   if (hourNow >= 0 && hourNow < 12) return "Good morning";
   if (hourNow >= 12 && hourNow < 18) return "Good afternoon";
+  return "Good evening";
 };
 
-app.get("/", (req, res) => {
-  res.send("Our USSD server");
-});
-
-app.post("/", (req, res) => {
+//USSD sender route
+app.post("/ussd", (req, res) => {
   const { phoneNumber, text } = req.body;
 
   let response = "";
@@ -111,12 +112,19 @@ app.post("/", (req, res) => {
     response = `CON Enter latest delivery date. \n Format - (DD/MM/YYYY). \n`;
   }
 
-  //placing the order
+  //enter order deliver by date
   else if (textArr.length === 5) {
-    orderData = { ...orderData, deliveryDate: textArr[4], client: phoneNumber };
+    orderData = { ...orderData, deliveryDate: textArr[4] };
+    response = `CON How long will this refill serve you? (in days). \n`;
+  }
+
+  //placing the order
+  else if (textArr.length === 6) {
+    orderData = { ...orderData, span: textArr[5], client: phoneNumber };
     const message = `Your order with orderID ${generateOrderId()} has been placed successfully. \n Awaiting delivery.`;
     sendMessage(message, phoneNumber);
-    response = `END Your order has been placed successfully. Awaiting delivery. \n`;
+    console.log(orderData);
+    response = `END Your order has been placed successfully. Awaiting confirmation and delivery. \n`;
   }
 
   //invalid selection
@@ -128,6 +136,55 @@ app.post("/", (req, res) => {
   res.send(response);
 });
 
-app.listen(3000, () => {
-  console.log("Server started on port 3000");
+//send clinician verify code
+app.post("/clinician/register", async (req, res) => {
+  const { phone } = req.body;
+  try {
+    const token = jwt.sign({ phone }, "123456");
+    const link = "http://localhost:5173/verify?token=" + token;
+    const message = `You have been invited to be a clinician at Curecab. \n Click this link to get verified . \n\n ${link} `;
+    sendMessage(message, phone);
+    return res
+      .status(200)
+      .json({ msg: "Yoo have successfully added a new clinian." });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ msg: serror.message });
+  }
+});
+
+//set clinician password
+app.post("/clinician/verify", async (req, res) => {
+  const { phone, password, token } = req.body;
+  try {
+    const decoded = jwt.verify(token, "123456");
+
+    if (decoded.phone !== phone)
+      return res.status(404).json({
+        msg: "This token was not assigned to the phone number you provided.",
+      });
+
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    return res
+      .status(200)
+      .json({ msg: "Your account has been verified. Continue to login." });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ msg: error.message });
+  }
+});
+
+//send message
+app.post("/send-message", async (req, res) => {
+  const { message, to } = req.body;
+  try {
+    sendMessage(message, to);
+    return;
+  } catch (error) {
+    return res.status(500).json({ msg: error.message });
+  }
+});
+
+app.listen(5000, () => {
+  console.log("Server started on port 5000");
 });
